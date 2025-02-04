@@ -1,29 +1,21 @@
-import {use} from "react";
-import Image from "next/image";
 import {linkStyle} from "@/app/navigation";
+import Puzzle from "@/components/puzzle";
+import React from "react";
 
-type ImageData = {
-    id: string,
-    author: string
-    download_url: string
-}
+export default async function Page() {
+    const puzzlePageStyle =
+        "flex flex-col gap-4 justify-center " +
+        "items-center text-center w-full p-4 h-full";
+    const response = await fetch('https://picsum.photos/id/1015/2000/2000', {
+        next: {revalidate: 10},
+    });
 
-export default function Page() {
-    const puzzlePageStyle = "flex flex-col gap-4 justify-center content-center text-center w-full p-4";
-    const navbarStyle = "flex flex-row justify-center items-center w-full";
-    const data: Promise<ImageData> =
-        fetch(`https://picsum.photos/seed/1/info`)
-            .then((res) => res.json());
-    const imageData: ImageData = use(data);
+    const imageUrl = response.url;
+
     return (
         <div className={puzzlePageStyle}>
-            <span className={navbarStyle}>
-                <a className={"mr-auto " + linkStyle} href={'/'}>home</a>
-            </span>
-            <div className={"bg-no-repeat bg-center bg-contain w-auto h-[70vh]"}
-                 style={{backgroundImage: `url(${imageData?.download_url})`}}>
-
-            </div>
+            <a className={linkStyle + " w-1/5 min-w-20 max-w-32"} href={'/'}>home</a>
+            <Puzzle imageUrl={imageUrl} />
         </div>
     );
 }
