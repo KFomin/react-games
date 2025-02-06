@@ -37,7 +37,7 @@ export default function Puzzle({imageUrl}: ImagePiecesProps) {
         img.style.display = 'none';
     };
 
-    const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const handleMouseMove = (event: React.MouseEvent<HTMLSpanElement>) => {
         if (isDragging && draggedImageWithIndex !== null) {
             setCursorPosition({x: event.clientX, y: event.clientY});
             const images = document.querySelectorAll('img');
@@ -58,17 +58,32 @@ export default function Puzzle({imageUrl}: ImagePiecesProps) {
         }
     };
 
-    const handleMouseUp = () => {
-        if (isDragging && draggedImageWithIndex !== null && targetPieceIndex !== null) {
-            if (draggedImageWithIndex[0] !== targetPieceIndex) {
-                const updatedPieces = [...imagePieces];
+    const handleMouseUp = (event: React.MouseEvent) => {
+        if (isDragging && draggedImageWithIndex !== null) {
+            const gridRect = gridRef.current?.getBoundingClientRect();
 
-                [updatedPieces[draggedImageWithIndex[0]], updatedPieces[targetPieceIndex]] = [
-                    updatedPieces[targetPieceIndex],
-                    updatedPieces[draggedImageWithIndex[0]],
-                ];
-                setImagePieces(updatedPieces);
+            if (gridRect) {
+                const isInsideGrid =
+                    event.clientX >= gridRect.left &&
+                    event.clientX <= gridRect.right &&
+                    event.clientY >= gridRect.top &&
+                    event.clientY <= gridRect.bottom;
+
+                if (isInsideGrid && targetPieceIndex !== null) {
+                    // Меняем местами, только если отпущено внутри контейнера
+                    const updatedPieces = [...imagePieces];
+                    [updatedPieces[draggedImageWithIndex[0]], updatedPieces[targetPieceIndex]] = [
+                        updatedPieces[targetPieceIndex],
+                        updatedPieces[draggedImageWithIndex[0]],
+                    ];
+                    setImagePieces(updatedPieces);
+                } else {
+                    // Если отпущено вне контейнера, возвращаем изображение на старую позицию
+                    const originalIndex = draggedImageWithIndex[0];
+                    setTargetPieceIndex(originalIndex); // Обнуляем целевой индекс
+                }
             }
+
             const img = gridRef.current?.children[draggedImageWithIndex[0]] as HTMLImageElement;
             if (img) img.style.display = 'flex';
         }
@@ -134,7 +149,13 @@ export default function Puzzle({imageUrl}: ImagePiecesProps) {
     calculateCellWidth();
 
     return (
-        <>
+        <span
+            className={
+                "absolute top-[0] w-screen h-screen  flex flex-col " +
+                "items-center justify-center text-center align-middle gap-4"
+            }
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}>
             <div className="grid grid-flow-col grid-rows-4 bg-gray-800 max-w-[1080px]" ref={emptyGridRef}>
 
                 {Array.from({length: numColsToCut * numRowsToCut}).map((_, index) => (
@@ -148,8 +169,6 @@ export default function Puzzle({imageUrl}: ImagePiecesProps) {
                 ))}
             </div>
             <div className="grid grid-flow-col grid-rows-1 gap-1 max-w-full overflow-y-scroll"
-                 onMouseMove={handleMouseMove}
-                 onMouseUp={handleMouseUp}
                  ref={gridRef}
             >
                 {imagePieces.map((image, index) => (
@@ -181,6 +200,6 @@ export default function Puzzle({imageUrl}: ImagePiecesProps) {
                 />
             )}
 
-        </>
+        </span>
     );
 };
